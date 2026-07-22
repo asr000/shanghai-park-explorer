@@ -175,9 +175,6 @@ async def list_images(status: str = "approved"):
 async def serve_frontend():
     return FileResponse("static/index.html")
 
-@app.get("/")
-async def serve_frontend():
-    return FileResponse("static/index.html")
 
 @app.get("/health")
 async def health():
