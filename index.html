@@ -189,7 +189,8 @@ var _bkpKey="bkp_"+gi;
 var _bkpImgs=_bkp(localStorage.getItem(_bkpKey)||"[]");
 var _boot=_bkpImgs.map(function(u,i){return{url:u.url,label:u.label||"审核通过",up:true,key:u.key||("b"+i),fromBackend:true};});
 var _lups=(ups[gi]||[]).map(function(u,i){return{url:u.url,label:u.label||"我的照片",up:true,key:u.key||("u"+i),pending:!!u.pending,uploadStatus:u.uploadStatus};});
-var up=_boot.concat(_lups);
+var _bkups=_bkp(localStorage.getItem("bkp_"+gi)||"[]").map(function(u,i){return{url:u.url,label:u.label||"社区照片",up:true,key:u.key||("bk"+i),fromBackend:true,uploadStatus:"uploaded"};});
+var up=_boot.concat(_lups).concat(_bkups);
 ga=React.createElement("div",{className:"go",onClick:function(){gal=null;R();}},
   React.createElement("div",{className:"gm",onClick:function(e){e.stopPropagation();}},
     React.createElement("div",{className:"gh"},
