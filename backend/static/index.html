@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>上海公园探索器</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#f0f7f2;font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#1b4332}
+#ld{display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:12px;color:#52b788;font-size:14px}
+#ld .sp{width:30px;height:30px;border:3px solid #d8f3dc;border-top-color:#2d6a4f;border-radius:50%;animation:s .8s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+.app{display:flex;height:100vh;min-height:0;min-height:0}
+.sb{width:350px;background:#fff;border-right:1px solid #e8f0ea;display:flex;flex-direction:column;flex-shrink:0;z-index:500;overflow:hidden;height:100%;min-height:0;height:100%}
+.sbh{padding:16px 16px 8px;border-bottom:1px solid #e8f0ea;flex-shrink:0}
+.sbh h1{font-size:18px;color:#1b4332;letter-spacing:-0.3px}
+.sbh .sub{font-size:12px;color:#52b788;margin-top:2px}
+.sa{padding:10px 12px;flex-shrink:0}
+.si{width:100%;padding:8px 12px;border:1px solid #d8f3dc;border-radius:10px;font-size:13px;outline:none;background:#f8fdfa}
+.si:focus{border-color:#2d6a4f;box-shadow:0 0 0 3px rgba(45,106,79,0.12)}
+.fc{display:flex;gap:4px;padding:6px 12px;flex-wrap:wrap;flex-shrink:0}
+.fcb{padding:4px 10px;border:1px solid #d8f3dc;border-radius:14px;font-size:11px;cursor:pointer;background:#fff;color:#52b788}
+.fcb:hover{background:#d8f3dc}
+.fcb.a{background:#2d6a4f;color:#fff;border-color:#2d6a4f}
+.ct{padding:2px 14px;font-size:11px;color:#52b788;flex-shrink:0}
+.pl{flex:1;overflow-y:auto;padding:0 12px 12px}
+.pc{padding:10px 12px;border:1px solid #e8f0ea;border-radius:10px;cursor:pointer;background:#fff;margin-bottom:6px;position:relative;overflow:hidden;transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease,border-color .2s ease}
+.pc:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(45,106,79,.15);border-color:#52b788}.pc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;transition:background .25s;border-radius:10px 0 0 10px;z-index:1}.pc:hover::before{background:#52b788}.pc:active::after{content:"";position:absolute;inset:0;background:rgba(82,183,136,.15);border-radius:10px;animation:ripple .45s ease-out}@keyframes ripple{0%{opacity:1}60%{opacity:.4}100%{opacity:0}}
+.pc.s{border:2px solid #2d6a4f;background:#f0faf4;box-shadow:0 4px 12px rgba(45,106,79,.12);transform:none!important;cursor:default}.pc.s:hover{transform:none}.pc.s::before{background:#2d6a4f}
+.pcn{font-size:14px;font-weight:600;color:#1b4332}
+.pcd{font-size:11px;color:#95b8a0;margin-top:2px}
+.pt{display:flex;gap:2px;flex-wrap:wrap;margin-top:4px}
+.ptb{display:inline-block;font-size:9px;padding:1px 5px;border-radius:4px;color:#fff;line-height:15px}
+.mc{flex:1;position:relative}
+#map{height:100%!important;width:100%!important}
+.leaflet-container{background:#d4e9d6!important;height:100%!important;width:100%!important}
+.leaflet-tile-pane{filter:saturate(0.65) brightness(1.05)!important}
+.ic{position:absolute;bottom:16px;left:16px;width:340px;background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(45,106,79,0.18);z-index:1000;overflow:hidden;animation:slideUp .3s ease}
+@keyframes slideUp{0%{transform:translateY(24px);opacity:0}55%{transform:translateY(-5px);opacity:1}75%{transform:translateY(2px);opacity:1}100%{transform:translateY(0);opacity:1}}
+.ih{height:100px;background:linear-gradient(135deg,#2d6a4f,#52b788);padding:14px 14px 10px;display:flex;flex-direction:column;justify-content:flex-end;position:relative}
+.ih h2{font-size:16px;color:#fff;position:relative;z-index:1}
+.ih .ad{color:rgba(255,255,255,.85);font-size:11px;position:relative;z-index:1}
+.ib{padding:12px 14px 14px}
+.id{font-size:12px;color:#555;line-height:1.7;margin-bottom:8px}
+.ia{display:flex;gap:8px;padding-top:10px;border-top:1px solid #e8f0ea}
+.ibtn{padding:6px 14px;border-radius:8px;font-size:11px;cursor:pointer;border:1px solid #d8f3dc;background:#fff;flex:1;color:#2d6a4f}
+.ibtn:hover{background:#d8f3dc}
+.go{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.gm{background:#fff;border-radius:14px;width:88%;max-width:600px;max-height:85vh;display:flex;flex-direction:column}
+.gh{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e8f0ea;font-weight:600;font-size:14px}
+.gg{display:grid;gap:8px;padding:10px 14px;overflow-y:auto;flex:1;grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+.ph{aspect-ratio:4/3;border-radius:8px;overflow:hidden;position:relative;background:#f0f0f0}
+.ph img{width:100%;height:100%;object-fit:cover}
+.ul{display:flex;gap:6px;padding:8px 14px;border-bottom:1px solid #e8f0ea}
+.ulb{padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;border:1px dashed #52b788;background:#d8f3dc;color:#2d6a4f}
+.ulb:hover{background:#b7e4c7}
+.cb{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.9);border:none;cursor:pointer;font-size:11px;z-index:2;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+@media(max-width:768px){.sb{display:none}.ic{left:8px;right:8px;width:auto}}
+
+@keyframes markerPulse{0%{transform:scale(1)}35%{transform:scale(1.5)}100%{transform:scale(1)}}
+.ph-pending{position:absolute;top:4px;left:4px;font-size:9px;background:rgba(245,158,11,.85);color:#fff;padding:1px 6px;border-radius:6px;z-index:3}.ph-rejected{position:absolute;top:4px;left:4px;font-size:9px;background:rgba(220,38,38,.85);color:#fff;padding:1px 6px;border-radius:6px;z-index:3}</style>
+</head>
+<body>
+<div id="ld"><div class="sp"></div><span>加载中...</span></div>
+<div id="root" style="display:none">
+  <div class="app">
+    <div id="sidebar-slot" class="sb"></div>
+    <div class="mc">
+      <div id="map"></div>
+      <div id="overlay-root"></div>
+    </div>
+  </div>
+</div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+var sr=ReactDOM.createRoot(document.getElementById("sidebar-slot"));
+var or=ReactDOM.createRoot(document.getElementById("overlay-root"));
+var sr=ReactDOM.createRoot(document.getElementById("sidebar-slot"));
+var or=ReactDOM.createRoot(document.getElementById("overlay-root"));
+try{
+var P=[["shiji","世纪公园",31.215,121.548,"浦东新区","浦东新区锦绣路1001号","综合公园","上海最大的生态城市公园，占地140公顷，以大面积草坪、湖泊和森林为特色。拥有音乐喷泉、疏林草地区、鸟类保护区等八大景区，是市民周末休闲首选地。",["城市绿洲","野餐胜地","跑步圣地","亲子乐园","拍照出片","赏花胜地"]],["zhongshan","中山公园",31.225,121.417,"长宁区","长宁区长宁路780号","综合公园","百年历史名园，上海最著名的公园之一。园内有英式园林风格的大草坪、百年悬铃木古树群、牡丹园等。早锻炼人群密集，是长宁区市民生活的重要地标。",["城市绿洲","历史底蕴","运动健身","遛娃圣地","赏花胜地","免费开放"]],["fuxing","复兴公园",31.218,121.466,"黄浦区","黄浦区雁荡路105号","综合公园","上海唯一的法国古典风格公园，拥有标志性下沉式花坛、喷泉和法式梧桐大道。周边环绕老上海法租界历史建筑群，文艺气息浓厚。",["法式浪漫","文艺气息","拍照出片","历史底蕴","城市绿洲","网红打卡"]],["renmin","人民公园",31.229,121.475,"黄浦区","黄浦区南京西路231号","综合公园","坐落于上海市中心黄金地段，毗邻南京西路商圈。园内有著名相亲角、碧翠湖、荷花池。身处繁华地段，是城市中心的绿色喘息空间。",["城市绿洲","免费开放","静谧放松","赏花胜地","拍照出片"]],["shanghaibg","上海植物园",31.15,121.436,"徐汇区","徐汇区龙吴路1111号","专类公园","集科研、科普、游览于一体的综合性植物园。园内收集活植物3500余种，拥有盆景园、牡丹园、蔷薇园、竹园等15个专类园区。春季樱花和秋季红枫闻名沪上。",["赏花胜地","亲子乐园","拍照出片","城市绿洲","野餐胜地","免费开放"]],["chenshan","辰山植物园",31.079,121.178,"松江区","松江区辰花公路3888号","专类公园","华东地区规模最大的植物园，占地207公顷。拥有矿坑花园、温室展览馆、水生植物园等特色区域。网红矿坑瀑布景观在小红书和抖音上极受欢迎。",["赏花胜地","网红打卡","拍照出片","亲子乐园","野餐胜地","露营友好"]],["gongqing","共青森林公园",31.311,121.547,"杨浦区","杨浦区军工路2000号","森林公园","上海中心城区最大的森林公园，密林湖泊溪流交织。拥有骑马场、烧烤区、森林小火车等特色体验项目。秋日红枫和水杉林是摄影爱好者的天堂。",["城市绿洲","野餐胜地","亲子乐园","露营友好","拍照出片","运动健身"]],["luxun","鲁迅公园",31.272,121.483,"虹口区","虹口区四川北路2288号","综合公园","原名虹口公园，为纪念鲁迅先生更名。园内有鲁迅纪念馆、鲁迅墓、樱花山。每年春季樱花盛开时是上海最著名的赏樱胜地之一。",["历史底蕴","赏花胜地","文艺气息","城市绿洲","拍照出片","免费开放"]],["heping","和平公园",31.275,121.5,"虹口区","虹口区大连路1131号","综合公园","虹口区最大的综合性公园，园内有湖心亭、生态岛、月季园和儿童乐园。2022年完成改造提升，拆除了围墙，成为24小时开放的无界公园。",["亲子乐园","夜间开放","遛娃圣地","运动健身","城市绿洲","免费开放"]],["changfeng","长风公园",31.231,121.388,"普陀区","普陀区大渡河路189号","综合公园","普陀区标志性综合公园，以铁臂山和银锄湖为核心景观。园内有长风海洋世界、划船码头等游乐设施，是上海最受亲子家庭欢迎的公园之一。",["亲子乐园","遛娃圣地","城市绿洲","运动健身","拍照出片"]],["guilin","桂林公园",31.168,121.44,"徐汇区","徐汇区桂林路128号","历史公园","原上海帮派大佬黄金荣的私家花园，以江南古典园林风格著称。园内四教厅、九曲桥、石舫等建筑精美。秋季金桂飘香闻名沪上。",["历史底蕴","赏花胜地","文艺气息","静谧放松","拍照出片"]],["jingan","静安公园",31.223,121.449,"静安区","静安区南京西路1649号","综合公园","位于静安寺商圈核心区的都市绿洲。园内有巴厘岛风情景观、露天咖啡座和下沉式广场。静安八景之一的静安涌泉就在园内，是商务人士午间休憩热门去处。",["城市绿洲","咖啡相伴","拍照出片","静谧放松","免费开放","文艺气息"]],["xujiahui","徐家汇公园",31.197,121.441,"徐汇区","徐汇区衡山路811号","综合公园","横跨徐家汇商圈的现代都市公园，以汇金湖和景观天桥为特色。保留了大中华橡胶厂烟囱作为工业遗产地标。园内步道系统完善，是白领和居民的理想散步地。",["城市绿洲","文艺气息","跑步圣地","拍照出片","历史底蕴","免费开放"]],["daning","大宁公园",31.275,121.448,"静安区","静安区广中西路288号","综合公园","浦西最大的综合公园之一，以白沙滩、罗马广场和郁金香花海闻名。每年春季的郁金香花展吸引大量游客。园内还有大型游乐场和运动场地。",["亲子乐园","赏花胜地","网红打卡","拍照出片","遛娃圣地","运动健身"]],["minhangsport","闵行体育公园",31.131,121.382,"闵行区","闵行区新镇路456号","专类公园","上海首座体育主题公园，融合运动场馆与生态景观。拥有千米彩色健身步道、篮球场、网球场、足球场等设施。五彩滑道是小朋友的最爱。",["运动健身","跑步圣地","亲子乐园","骑行友好","城市绿洲"]],["gucun","顾村公园",31.346,121.376,"宝山区","宝山区沪太路4788号","综合公园","宝山区最大的公园，以樱花专类园闻名。每年三四月樱花季日均客流超10万人。园内有森林休闲运动园、儿童森林嘉年华、皮划艇等丰富项目。",["赏花胜地","网红打卡","拍照出片","亲子乐园","露营友好","野餐胜地"]],["binjiangforest","滨江森林公园",31.385,121.508,"浦东新区","浦东新区高桥镇凌桥高沙滩3号","森林公园","位于黄浦江与长江交汇口，拥有上海唯一的原始湿地景观。园内保留了原生态的次生态森林和沼泽湿地，观鸟和自然教育的绝佳场所。",["观鸟天堂","江景绝美","城市绿洲","静谧放松","野餐胜地","骑行友好"]],["nanyuan","南园公园",31.203,121.481,"黄浦区","黄浦区龙华东路800号","社区公园","黄浦滨江沿线的社区公园，以绿植迷宫和滨江观景平台为特色。面积不大但设计精致，周边居民日常散步遛狗的热门去处。",["社区客厅","街角绿洲","遛狗圣地","江景绝美","邻里社交"]],["yanzhong","延中绿地",31.226,121.472,"黄浦区","黄浦区延安东路与重庆南路交叉口","街心绿地","上海中心城区最大的开放式街头绿地，由多个地块组成。设计为城市森林风格，跌水瀑布和蜿蜒步道贯穿其中。高楼环绕中的绿色呼吸空间。",["街角绿洲","免费开放","城市绿洲","跑步圣地","静谧放松"]],["dongping","东平国家森林公园",31.61,121.48,"崇明区","崇明区北沿公路2188号","森林公园","华东地区最大的人造平原森林，国家4A级景区。森林覆盖率达90%，拥有杉树林、房车露营地、攀岩等设施。上海市民周末逃离城市的热门目的地。",["露营天堂","城市绿洲","亲子乐园","骑行友好","观鸟天堂","野餐胜地"]],["huamu","花木公园",31.216,121.548,"浦东新区","浦东新区花木路1101号","社区公园","浦东花木地区的社区公园，绿化率高，园内设有健身步道和儿童活动区。周边为高端住宅区和浦东行政中心，环境清幽。",["社区客厅","邻里社交","静谧放松","遛娃圣地","免费开放"]],["mengqing","梦清园",31.252,121.45,"普陀区","普陀区宜昌路130号","主题公园","苏州河畔的环保主题公园，原为啤酒厂旧址改造而来。园内有大型水净化展示系统和空中水渠景观。苏州河景观步道穿园而过，夜景尤为迷人。",["江景绝美","文艺气息","日落圣地","城市绿洲","拍照出片","历史底蕴"]],["kangjian","康健园",31.161,121.431,"徐汇区","徐汇区桂林路91号","社区公园","徐汇区老牌社区公园，以湖心亭、紫藤长廊为特色。园内有小型儿童游乐区。周边居民晨练、下棋、散步的日常聚集地，充满生活气息。",["社区客厅","邻里社交","静谧放松","免费开放"]],["huashan","华山绿地",31.209,121.425,"长宁区","长宁区华山路与平武路交叉口","街心绿地","长宁区精致的街角绿地，面积仅1万余平方米，但设计精巧，拥有起伏草坪、景观亭和蜿蜒步道。周边居民和商务人士的日常休憩地。",["街角绿洲","静谧放松","免费开放","邻里社交","拍照出片"]],["langxiang","朗香公园",31.3456,121.3987,"宝山区","宝山区沪太路与锦秋路路口","口袋公园","宠物友好主题公园，设有宠物咖啡、宠物露营、宠物游乐场等设施。周边居民日常带宠物社交的胜地，满足生活休闲、宠物服务、亲子游乐、健身锻炼等不同需求。",["宠物友好","遛狗圣地","露营友好","亲子乐园","网红打卡","咖啡相伴"]],["qilian","祁连花园",31.3321,121.3854,"宝山区","宝山区锦龙苑与朗香公园映小区之间","口袋公园","社区口袋公园，周边居民日常休闲聚集地。目前正在进行设施更新改造，未来将更好地服务周边社区居民。",["社区客厅","街角绿洲","邻里社交","静谧放松"]]];
+var DS=["宝山区","崇明区","徐汇区","普陀区","杨浦区","松江区","浦东新区","虹口区","长宁区","闵行区","静安区","黄浦区"];
+var TyC={"综合公园":"#2d6a4f","专类公园":"#40916c","森林公园":"#1b4332","历史公园":"#b8860b","社区公园":"#52b788","街心绿地":"#95c799","主题公园":"#6a994e","口袋公园":"#74c69d"};
+var TC={"城市绿洲":"#e76f51","野餐胜地":"#52b788","跑步圣地":"#2d6a4f","亲子乐园":"#b8860b","拍照出片":"#6a994e","赏花胜地":"#40916c","历史底蕴":"#e9c46a","运动健身":"#95c799","遛娃圣地":"#bc6c25","免费开放":"#264653","法式浪漫":"#e76f51","文艺气息":"#52b788","网红打卡":"#2d6a4f","静谧放松":"#b8860b","露营友好":"#6a994e","夜间开放":"#40916c","咖啡相伴":"#e9c46a","骑行友好":"#95c799","观鸟天堂":"#bc6c25","江景绝美":"#264653","社区客厅":"#e76f51","街角绿洲":"#52b788","遛狗圣地":"#2d6a4f","邻里社交":"#b8860b","露营天堂":"#6a994e","日落圣地":"#40916c","宠物友好":"#e9c46a"};
+var Pht={};
+var f=P.slice();
+var sel=null,fdi=null,gal=null;
+var mi=null,mr=[];
+var ls=window.localStorage;
+var ups={};
+function ld(){var d=ls.getItem("pups");if(d)try{ups=JSON.parse(d)}catch(e){}}
+function sv(){try{ls.setItem("pups",JSON.stringify(ups))}catch(e){}}
+ld();
+var API_URL=(function(){try{return localStorage.getItem("api_url")||"https://shanghai-park-explorer-production.up.railway.app"}catch(e){return"https://shanghai-park-explorer-production.up.railway.app"}})();
+var _bkp=(API_URL?JSON.parse:function(x){try{return JSON.parse(x)}catch(e){return[]}});
+var _pollTimer=null;
+function _poll(pid){clearInterval(_pollTimer);
+_pollTimer=setInterval(function(){
+  if(!API_URL)return;
+  fetch(API_URL+"/list?status=approved").then(function(r){return r.json()})
+  .then(function(data){
+    if(!data||!data.length)return;
+    var a=_bkp(localStorage.getItem("bkp_"+pid)||"[]");var changed=false;
+    data.forEach(function(img){
+      var url=API_URL+img.url;
+      if(!a.some(function(x){return x.url===url})){
+        a.push({url:url,label:img.filename,key:"bkp_"+img.id,up:true,fromBackend:true,status:img.status,score:img.ai_score});
+        changed=true;
+      }
+    });
+    if(changed){localStorage.setItem("bkp_"+pid,JSON.stringify(a));if(typeof R==="function")R();}
+  }).catch(function(){});
+},3000);
+}
+function R(){
+  var f=P;
+  if(fdi)f=f.filter(function(p){return p[4]===fdi});
+  ui(f);
+  if(mi)up(f);
+}
+function PC(p,s){
+var c=TyC[p[6]]||"#52b788";
+return React.createElement("div",{"data-park-id":p[0],className:"pc"+(s?" s":""),onClick:function(){sel=p;R();}},
+  React.createElement("div",{className:"pcn"},p[1]),
+  React.createElement("div",{className:"pcd"},"📍 "+p[4]+" · "+p[3]),
+  React.createElement("div",{className:"pt"},
+    (p[8]||[]).map(function(t){return React.createElement("span",{key:t,className:"ptb",style:{background:TC[t]||"#52b788"}},t)})
+  ),
+  React.createElement("span",{style:{fontSize:9,padding:"1px 6px",borderRadius:4,background:(TyC[p[6]]||"#52b788")+"18",color:TyC[p[6]]||"#52b788"}},p[6])
+);
+}
+function ui(f){
+sr.render(React.createElement("div",{style:{display:"flex",flexDirection:"column",height:"100%",minHeight:0}},
+  React.createElement("div",{className:"sbh"},
+    React.createElement("h1",null,"🌳 上海公园"),
+    React.createElement("div",{className:"sub"},"探索城市绿洲")
+  ),
+  React.createElement("div",{className:"sa"},
+    React.createElement("input",{className:"si",placeholder:"🔍 搜索...",onInput:function(e){
+      fdi=null;
+      var v=e.target.value.trim().toLowerCase();
+      var ff=v?P.filter(function(p){return p[1].toLowerCase().indexOf(v)>=0}):P;
+      ui(ff);
+      if(mi)up(ff);
+    }})
+  ),
+  React.createElement("div",{className:"fc"},
+    React.createElement("button",{className:"fcb"+(fdi===null?" a":""),onClick:function(){fdi=null;R();}},"全部"),
+    DS.map(function(d){return React.createElement("button",{key:d,className:"fcb"+(fdi===d?" a":""),onClick:function(){fdi=d;R();}},d)})
+  ),
+  React.createElement("div",{className:"ct"},"共 "+f.length+" 个公园"),
+  React.createElement("div",{className:"pl"},
+    f.length?f.map(function(p){return PC(p,sel&&sel[0]===p[0]);}):
+    React.createElement("div",{style:{textAlign:"center",padding:30,color:"#999",fontSize:13}},"🔍 没有匹配的公园")
+  )
+));
+// Info card
+var ic=null;
+if(sel){
+ic=React.createElement("div",{className:"ic"},
+  React.createElement("div",{className:"ih"},
+    React.createElement("button",{className:"cb",onClick:function(){sel=null;R();}},"✕"),
+    React.createElement("h2",null,sel[1]),
+    React.createElement("div",{className:"ad"},"📍 "+sel[4]+" · "+sel[3])
+  ),
+  React.createElement("div",{className:"ib"},
+    React.createElement("span",{style:{fontSize:10,padding:"1px 8px",borderRadius:5,lineHeight:"18px",display:"inline-block",background:(TyC[sel[6]]||"#52b788")+"18",color:TyC[sel[6]]||"#52b788"}},sel[6]),
+    React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:3,margin:"5px 0"}},
+      (sel[8]||[]).map(function(t){return React.createElement("span",{key:t,style:{padding:"2px 8px",borderRadius:7,fontSize:10,background:(TC[t]||"#52b788")+"18",color:TC[t]||"#52b788"}},t)})
+    ),
+    React.createElement("div",{className:"id"},sel[7]),
+    React.createElement("div",{className:"ia"},
+      React.createElement("button",{className:"ibtn",onClick:function(){gal=sel;R();}},"📷 相册"),
+      React.createElement("button",{className:"ibtn",onClick:function(){if(mi)mi.flyTo([sel[2],sel[3]],15,{duration:0.8});}},"📍 定位")
+    )
+  )
+);
+}
+// Gallery modal
+var ga=null;
+if(gal){
+var gi=gal[0];
+var _bkpKey="bkp_"+gi;
+var _bkpImgs=_bkp(localStorage.getItem(_bkpKey)||"[]");
+var _boot=_bkpImgs.map(function(u,i){return{url:u.url,label:u.label||"审核通过",up:true,key:u.key||("b"+i),fromBackend:true};});
+var _lups=(ups[gi]||[]).map(function(u,i){return{url:u.url,label:u.label||"我的照片",up:true,key:u.key||("u"+i),pending:!!u.pending,uploadStatus:u.uploadStatus};});
+var up=_boot.concat(_lups);
+ga=React.createElement("div",{className:"go",onClick:function(){gal=null;R();}},
+  React.createElement("div",{className:"gm",onClick:function(e){e.stopPropagation();}},
+    React.createElement("div",{className:"gh"},
+      "📷 "+gal[1]+" 相册",
+      React.createElement("button",{style:{border:"none",background:"none",cursor:"pointer",fontSize:14,color:"#999"},onClick:function(){gal=null;R();}},"✕")
+    ),
+    React.createElement("div",{className:"ul"},
+      React.createElement("button",{className:"ulb",onClick:function(){document.getElementById("fu").click();}},"📤 上传照片"),
+      React.createElement("input",{id:"fu",type:"file",accept:"image/*",multiple:true,style:{display:"none"},onChange:function(ev){
+        var files=Array.from(ev.target.files);ev.target.value="";
+        var curGi=gi;
+        files.forEach(function(fx){
+          // 先存本地（即时显示）
+          var r=new FileReader();
+          r.onload=function(ev2){
+            var a=ups[curGi]||[];
+            var localKey=Date.now()+"_"+Math.random().toString(36).slice(2,6);
+            a.push({url:ev2.target.result,label:fx.name,key:localKey,up:true,pending:true,uploadStatus:API_URL?"uploading":"local"});
+            ups[curGi]=a;sv();R();
+            // 如果有后端，异步上传
+            if(API_URL){
+              a[a.length-1].uploadStatus="uploading";sv();R();
+              var fd=new FormData();fd.append("file",fx);
+              fetch(API_URL+"/upload",{method:"POST",body:fd})
+              .then(function(res){return res.json()})
+              .then(function(data){
+                a[a.length-1].uploadStatus="uploaded";sv();R();
+                if(data.status==="pending"){_poll(curGi);}
+              }).catch(function(){
+                a[a.length-1].uploadStatus="failed";sv();R();
+              });
+            }
+          };
+          r.readAsDataURL(fx);
+        });
+      }})
+    ),
+    React.createElement("div",{className:"gg"},
+      up.length?up.map(function(ph,i){
+        return React.createElement("div",{key:i,className:"ph"},
+          React.createElement("img",{src:ph.url,alt:ph.label,onError:function(e){e.target.style.display="none";}}),ph.uploadStatus?React.createElement("span",{style:{position:"absolute",top:3,left:3,fontSize:9,padding:"2px 4px",borderRadius:3,color:"#fff",background:ph.uploadStatus==="uploading"?"#f0ad4e":ph.uploadStatus==="failed"?"#d9534f":"#5cb85c",zIndex:3}},ph.uploadStatus==="uploading"?"上传中":ph.uploadStatus==="failed"?"失败":"已上传"):null,
+          React.createElement("button",{style:{position:"absolute",top:3,right:3,width:18,height:18,borderRadius:"50%",background:"rgba(0,0,0,.5)",color:"#fff",border:"none",cursor:"pointer",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",zIndex:2},onClick:function(){
+            var a=(ups[gi]||[]).filter(function(u){return u.key!==ph.key;});
+            if(a.length)ups[gi]=a;else delete ups[gi];
+            sv();
+            R();
+          }},"✕"),
+          React.createElement("div",{className:"lb"},"📸 我的照片")
+        );
+      }):
+      React.createElement("div",{style:{textAlign:"center",padding:30,color:"#999",fontSize:13}},
+        "还没有上传照片，点击上面的“上传照片”按钮开始"
+      )
+    ),
+    React.createElement("div",{style:{padding:"6px 14px",borderTop:"1px solid #e8f0ea",fontSize:11,color:"#999",textAlign:"center"}},
+      "共 "+up.length+" 张"
+    )
+  )
+);
+}
+or.render(React.createElement("div",null,ic,ga));
+}
+
+function up(f){
+if(!mi)return;
+mr.forEach(function(m){mi.removeLayer(m);});
+mr=[];
+f.forEach(function(p){
+  var c=TyC[p[6]]||"#52b788";
+  var s=sel&&sel[0]===p[0];
+  var sz=s?36:26;
+  var bd=s?4:3;
+  var hb='<div style="width:'+sz+'px;height:'+sz+'px;background:'+c+';border-radius:50%;border:'+bd+'px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3)'+(s?'animation:markerPulse .5s ease-out':'')+'"></div>';
+  var ic=L.divIcon({className:"",html:hb,iconSize:[sz+8,sz+8],iconAnchor:[(sz+8)/2,(sz+8)/2]});
+  var m=L.marker([p[2],p[3]],{icon:ic}).addTo(mi);
+  m.on("click",function(){sel=p;R();});
+  m.bindTooltip(p[1],{direction:"top",offset:[0,-14]});
+  mr.push(m);
+});
+if(sel&&mi)mi.flyTo([sel[2],sel[3]],15,{duration:.8});
+}
+document.getElementById("ld").style.display="none";
+document.getElementById("root").style.display="";
+mi=L.map("map",{center:[31.2304,121.4737],zoom:12,zoomControl:true,attributionControl:false,zoomSnap:.5});
+L.tileLayer("https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}",{maxZoom:19,minZoom:9}).addTo(mi);
+R();
+}catch(ex){var ld=document.getElementById("ld");if(ld)ld.innerHTML='<div style="padding:40px;text-align:center"><h3 style="color:#e76f51">😵 加载失败</h3><p style="color:#999;font-size:13px;margin-top:10px">'+ex.message+'</p></div>';}
+
+</script>
+</body>
+</html>
