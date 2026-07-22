@@ -1,6 +1,6 @@
 """
-上海公园探索器 - 图片审核后端
-启动: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+Shanghai Park Explorer - Image Moderation Backend
+Start: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 """
 import os
 import uuid
@@ -10,7 +10,6 @@ from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from pathlib import Path
 
 # Load .env for local dev; ignore if missing (Railway uses Dashboard Variables)
 try:
@@ -24,13 +23,20 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 
 from models import init_db, SessionLocal, ImagePost, ImageStatus
-from review import review_image
 
-# 配置日志
+# Try to import review; degrade gracefully if oss2 is not available
+try:
+    from review import review_image
+    REVIEW_AVAILABLE = True
+except Exception as e:
+    logging.warning(f"review_image import failed: {e}. Image moderation disabled.")
+    REVIEW_AVAILABLE = False
+
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 静态文件目录
+# Static files directory
 UPLOAD_DIR = Path("./static/imgs")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -38,13 +44,13 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    logger.info("✅ 数据库初始化完成")
+    logger.info("Database initialized")
     yield
 
 
-app = FastAPI(title="上海公园图片审核", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Shanghai Park Image Moderation", version="1.0.0", lifespan=lifespan)
 
-# CORS - 允许前端跨域
+# CORS - allow frontend cross-origin
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -62,20 +68,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 挂载静态文件服务
+# Mount static file service
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 async def _do_review(image_id: int, image_path: str):
-    """后台审核任务"""
+    """Background review task"""
+    if not REVIEW_AVAILABLE:
+        logger.warning("Review module not available, skipping review")
+        return
+    
     db = SessionLocal()
     try:
         post = db.get(ImagePost, image_id)
         if not post:
-            logger.error(f"审核任务: 找不到 id={image_id}")
+            logger.error(f"Review task: cannot find id={image_id}")
             return
 
-        logger.info(f"🔍 开始审核: {post.filename}")
+        logger.info(f"Starting review: {post.filename}")
         status, score, tags, reason = await review_image(image_path)
 
         post.status = ImageStatus(status)
@@ -85,11 +95,11 @@ async def _do_review(image_id: int, image_path: str):
         db.commit()
 
         if status == "approved":
-            logger.info(f"✅ 审核通过: {post.filename} (score={score})")
+            logger.info(f"Approved: {post.filename} (score={score})")
         else:
-            logger.info(f"❌ 审核拒绝: {post.filename} - {reason}")
+            logger.info(f"Rejected: {post.filename} - {reason}")
     except Exception as e:
-        logger.error(f"审核异常: {e}")
+        logger.error(f"Review exception: {e}")
     finally:
         db.close()
 
@@ -97,27 +107,27 @@ async def _do_review(image_id: int, image_path: str):
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...), background_tasks: BackgroundTasks = None):
     """
-    上传图片
-    - 保存到 ./static/imgs/
-    - 立即返回 {"id": ..., "status": "pending"}
-    - 后台异步审核
+    Upload image
+    - Save to ./static/imgs/
+    - Return immediately with {"id": ..., "status": "pending"}
+    - Background async review
     """
-    # 校验文件类型
+    # Validate file type
     allowed_types = {"image/jpeg", "image/png", "image/webp", "image/gif"}
     if file.content_type not in allowed_types:
-        raise HTTPException(400, f"不支持的文件类型: {file.content_type}")
+        raise HTTPException(400, f"Unsupported file type: {file.content_type}")
 
-    # 生成唯一文件名
+    # Generate unique filename
     ext = Path(file.filename).suffix or ".jpg"
     new_name = f"{uuid.uuid4().hex}{ext}"
     save_path = UPLOAD_DIR / new_name
 
-    # 保存文件
+    # Save file
     content = await file.read()
     with open(save_path, "wb") as f:
         f.write(content)
 
-    # 写入数据库
+    # Write to database
     db = SessionLocal()
     try:
         post = ImagePost(
@@ -132,7 +142,7 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
     finally:
         db.close()
 
-    # 异步后台审核
+    # Async background review
     background_tasks.add_task(_do_review, image_id, str(save_path))
 
     return {
@@ -146,10 +156,10 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
 @app.get("/list")
 async def list_images(status: str = "approved"):
     """
-    获取审核结果列表
-    ?status=approved  - 通过的（默认）
-    ?status=pending   - 审核中的
-    ?status=all       - 全部
+    Get review result list
+    ?status=approved  - approved (default)
+    ?status=pending   - in review
+    ?status=all       - all
     """
     db = SessionLocal()
     try:
@@ -177,10 +187,11 @@ async def list_images(status: str = "approved"):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "review_available": REVIEW_AVAILABLE}
 
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
+    logger.info(f"Starting server on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
