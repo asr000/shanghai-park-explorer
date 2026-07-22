@@ -1,4 +1,4 @@
-"""
+﻿"""
 上海公园探索器 - 图片审核后端
 启动: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 """
@@ -11,7 +11,12 @@ from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from pathlib import Path
-load_dotenv(Path(__file__).parent / ".env")
+
+# Load .env for local dev; ignore if missing (Railway uses Dashboard Variables)
+try:
+    load_dotenv(Path(__file__).parent / ".env")
+except Exception:
+    pass
 
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
