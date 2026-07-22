@@ -96,7 +96,7 @@ var ups={};
 function ld(){var d=ls.getItem("pups");if(d)try{ups=JSON.parse(d)}catch(e){}}
 function sv(){try{ls.setItem("pups",JSON.stringify(ups))}catch(e){}}
 ld();
-var API_URL=(function(){try{return localStorage.getItem("api_url")||""}catch(e){return""}})();
+var API_URL=(function(){try{return localStorage.getItem("api_url")||"https://shanghai-park-explorer-production.up.railway.app"}catch(e){return"https://shanghai-park-explorer-production.up.railway.app"}})();
 var _bkp=(API_URL?JSON.parse:function(x){try{return JSON.parse(x)}catch(e){return[]}});
 var _pollTimer=null;
 function _poll(pid){clearInterval(_pollTimer);

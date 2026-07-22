@@ -44,6 +44,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://asr000.github.io",
+        "https://shanghai-park-explorer-production.up.railway.app",
         "https://*.railway.app",
         "https://*.up.railway.app",
         "http://localhost:5173",
