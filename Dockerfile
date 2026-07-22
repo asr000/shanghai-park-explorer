@@ -1,8 +1,12 @@
-FROM python:3.11-slim
+﻿FROM python:3.11-slim
 WORKDIR /app
 
-RUN pip install --no-cache-dir fastapi uvicorn
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY main_simple.py .
+COPY main.py models.py review.py ./
 
-CMD ["python", "main_simple.py"]
+RUN mkdir -p static/imgs
+
+EXPOSE 8000
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
