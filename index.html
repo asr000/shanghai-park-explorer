@@ -61,7 +61,7 @@ html,body{height:100%;background:#f0f7f2;font-family:"PingFang SC","Microsoft Ya
 @media(max-width:768px){.sb{display:none}.ic{left:8px;right:8px;width:auto}}
 
 @keyframes markerPulse{0%{transform:scale(1)}35%{transform:scale(1.5)}100%{transform:scale(1)}}
-</style>
+.ph-pending{position:absolute;top:4px;left:4px;font-size:9px;background:rgba(245,158,11,.85);color:#fff;padding:1px 6px;border-radius:6px;z-index:3}.ph-rejected{position:absolute;top:4px;left:4px;font-size:9px;background:rgba(220,38,38,.85);color:#fff;padding:1px 6px;border-radius:6px;z-index:3}</style>
 </head>
 <body>
 <div id="ld"><div class="sp"></div><span>加载中...</span></div>
@@ -96,6 +96,27 @@ var ups={};
 function ld(){var d=ls.getItem("pups");if(d)try{ups=JSON.parse(d)}catch(e){}}
 function sv(){try{ls.setItem("pups",JSON.stringify(ups))}catch(e){}}
 ld();
+var API_URL=(function(){try{return localStorage.getItem("api_url")||""}catch(e){return""}})();
+var _bkp=(API_URL?JSON.parse:function(x){try{return JSON.parse(x)}catch(e){return[]}});
+var _pollTimer=null;
+function _poll(pid){clearInterval(_pollTimer);
+_pollTimer=setInterval(function(){
+  if(!API_URL)return;
+  fetch(API_URL+"/list?status=approved").then(function(r){return r.json()})
+  .then(function(data){
+    if(!data||!data.length)return;
+    var a=_bkp(localStorage.getItem("bkp_"+pid)||"[]");var changed=false;
+    data.forEach(function(img){
+      var url=API_URL+img.url;
+      if(!a.some(function(x){return x.url===url})){
+        a.push({url:url,label:img.filename,key:"bkp_"+img.id,up:true,fromBackend:true,status:img.status,score:img.ai_score});
+        changed=true;
+      }
+    });
+    if(changed){localStorage.setItem("bkp_"+pid,JSON.stringify(a));if(typeof R==="function")R();}
+  }).catch(function(){});
+},3000);
+}
 function R(){
   var f=P;
   if(fdi)f=f.filter(function(p){return p[4]===fdi});
@@ -164,7 +185,11 @@ ic=React.createElement("div",{className:"ic"},
 var ga=null;
 if(gal){
 var gi=gal[0];
-var up=(ups[gi]||[]).map(function(u,i){return{url:u.url,label:u.label||"我的照片",up:true,key:u.key||("u"+i)};});
+var _bkpKey="bkp_"+gi;
+var _bkpImgs=_bkp(localStorage.getItem(_bkpKey)||"[]");
+var _boot=_bkpImgs.map(function(u,i){return{url:u.url,label:u.label||"审核通过",up:true,key:u.key||("b"+i),fromBackend:true};});
+var _lups=(ups[gi]||[]).map(function(u,i){return{url:u.url,label:u.label||"我的照片",up:true,key:u.key||("u"+i),pending:!!u.pending};});
+var up=_boot.concat(_lups);
 ga=React.createElement("div",{className:"go",onClick:function(){gal=null;R();}},
   React.createElement("div",{className:"gm",onClick:function(e){e.stopPropagation();}},
     React.createElement("div",{className:"gh"},
@@ -174,18 +199,28 @@ ga=React.createElement("div",{className:"go",onClick:function(){gal=null;R();}},
     React.createElement("div",{className:"ul"},
       React.createElement("button",{className:"ulb",onClick:function(){document.getElementById("fu").click();}},"📤 上传照片"),
       React.createElement("input",{id:"fu",type:"file",accept:"image/*",multiple:true,style:{display:"none"},onChange:function(ev){
-        Array.from(ev.target.files).forEach(function(fx){
+        var files=Array.from(ev.target.files);ev.target.value="";
+        var curGi=gi;
+        files.forEach(function(fx){
+          // 先存本地（即时显示）
           var r=new FileReader();
           r.onload=function(ev2){
-            var a=ups[gi]||[];
-            a.push({url:ev2.target.result,label:fx.name,key:Date.now()+"_"+Math.random().toString(36).slice(2,6)});
-            ups[gi]=a;
-            sv();
-            R();
+            var a=ups[curGi]||[];
+            var localKey=Date.now()+"_"+Math.random().toString(36).slice(2,6);
+            a.push({url:ev2.target.result,label:fx.name,key:localKey,up:true,pending:true});
+            ups[curGi]=a;sv();R();
+            // 如果有后端，异步上传
+            if(API_URL){
+              var fd=new FormData();fd.append("file",fx);
+              fetch(API_URL+"/upload",{method:"POST",body:fd})
+              .then(function(res){return res.json()})
+              .then(function(data){
+                if(data.status==="pending"){_poll(curGi);}
+              }).catch(function(){});
+            }
           };
           r.readAsDataURL(fx);
         });
-        ev.target.value="";
       }})
     ),
     React.createElement("div",{className:"gg"},
