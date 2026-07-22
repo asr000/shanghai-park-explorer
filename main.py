@@ -185,6 +185,21 @@ async def list_images(status: str = "approved"):
         db.close()
 
 
+
+@app.get("/")
+async def root():
+    """Root endpoint - health check friendly"""
+    return {
+        "app": "Shanghai Park Explorer",
+        "version": "1.0.0",
+        "endpoints": {
+            "health": "/health",
+            "upload": "/upload",
+            "list": "/list",
+            "docs": "/docs",
+        }
+    }
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "review_available": REVIEW_AVAILABLE}
