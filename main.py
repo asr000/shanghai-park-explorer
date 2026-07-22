@@ -187,18 +187,8 @@ async def list_images(status: str = "approved"):
 
 
 @app.get("/")
-async def root():
-    """Root endpoint - health check friendly"""
-    return {
-        "app": "Shanghai Park Explorer",
-        "version": "1.0.0",
-        "endpoints": {
-            "health": "/health",
-            "upload": "/upload",
-            "list": "/list",
-            "docs": "/docs",
-        }
-    }
+async def serve_frontend():
+    return FileResponse("static/index.html")
 
 @app.get("/health")
 async def health():
