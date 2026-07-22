@@ -1,8 +1,7 @@
-fastapi>=0.100.0
+﻿fastapi>=0.100.0
 sqlalchemy>=2.0
 python-multipart>=0.0.6
 uvicorn>=0.22.0
 python-dotenv>=1.0.0
 aliyun-python-sdk-core>=2.13.0
-aliyun-python-sdk-imagerecog>=1.0.0
 oss2>=2.18.0
