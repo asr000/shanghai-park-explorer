@@ -59,7 +59,7 @@ WHITELIST_TAGS = {
     "日出", "秋天", "春天", "小溪", "池塘", "草地",
     "林地", "瀑布", "峡谷", "海岸", "岛屿", "绿植",
     "绿树", "草坪", "湖水", "江景", "河景",
-
+}
 # ---------- Explicit Block Tags ----------
 BLOCK_TAGS = {
     "car", "vehicle", "person", "people", "food", "dish",
