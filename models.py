@@ -1,5 +1,5 @@
 """
-SQLAlchemy 数据库模型
+SQLAlchemy Database Model
 """
 from sqlalchemy import Column, Integer, String, Float, DateTime, Enum as SQLEnum, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -17,25 +17,25 @@ class ImageStatus(str, enum.Enum):
 
 
 class ImagePost(Base):
-    """图片记录表"""
+    """Image record table"""
     __tablename__ = "image_posts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    filename = Column(String(255), nullable=False, comment="原始文件名")
-    filepath = Column(String(512), nullable=False, comment="存储路径")
-    status = Column(SQLEnum(ImageStatus), default=ImageStatus.PENDING, nullable=False, comment="审核状态")
-    ai_score = Column(Float, nullable=True, comment="AI 审核置信度 0-100")
-    ai_tags = Column(String(512), nullable=True, comment="AI 识别标签")
-    reject_reason = Column(String(255), nullable=True, comment="拒绝原因")
+    filename = Column(String(255), nullable=False, comment="Original filename")
+    filepath = Column(String(512), nullable=False, comment="Storage path")
+    status = Column(SQLEnum(ImageStatus), default=ImageStatus.PENDING, nullable=False, comment="Review status")
+    ai_score = Column(Float, nullable=True, comment="AI review confidence 0-100")
+    ai_tags = Column(String(512), nullable=True, comment="AI detected tags")
+    reject_reason = Column(String(255), nullable=True, comment="Rejection reason")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
 
-# 数据库初始化
+# Database initialization
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./images.db")
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def init_db():
-    """创建所有表"""
+    """Create all tables"""
     Base.metadata.create_all(bind=engine)

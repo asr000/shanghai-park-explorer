@@ -95,9 +95,9 @@ async def _do_review(image_id: int, image_path: str):
         db.commit()
 
         if status == "approved":
-            logger.info(f"Approved: {post.filename} (score={score})")
+            logger.info(f"APPROVED: {post.filename} (score={score})")
         else:
-            logger.info(f"Rejected: {post.filename} - {reason}")
+            logger.info(f"REJECTED: {post.filename} - {reason}")
     except Exception as e:
         logger.error(f"Review exception: {e}")
     finally:
